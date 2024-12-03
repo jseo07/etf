@@ -1,0 +1,25 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Search Bar</title>
+    <!-- Load the CSS file using Django's static tag -->
+
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">  <!-- Correctly reference the CSS file -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+</head>
+<body>
+    <div class="page">
+        <div class="search-container">
+            <input type="text" id="search-input" placeholder="Search..." />
+        </div>
+        <div id="results" class="results-container">
+            <!-- Filtered results will appear here -->
+        </div>
+    </div>    
+    <script src="{% static 'js/live_search.js' %}"></script>
+</body>
+</html>
