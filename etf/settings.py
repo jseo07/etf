@@ -34,7 +34,7 @@ SECRET_KEY = 'django-insecure-15df_p4mzvd-)ub=uzjy95^#$c)u8slkmd&)&!bs1k$1#%7@1+
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
-ALLOWED_HOSTS = ['https://jangwon-68c8d33bb755.herokuapp.com/']
+ALLOWED_HOSTS = ['dividends-bchhg9f3g2ese9gb.canadacentral-01.azurewebsites.net']
 #'https://jangwon-68c8d33bb755.herokuapp.com/'
 
 # Application definition
