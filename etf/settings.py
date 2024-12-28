@@ -35,7 +35,6 @@ DEBUG = False
 
 ALLOWED_HOSTS = ['https://jangwon-68c8d33bb755.herokuapp.com/']
 
-
 # Application definition
 
 INSTALLED_APPS = [
