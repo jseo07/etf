@@ -1,9 +1,6 @@
 from django.shortcuts import render, redirect
 from django.http import HttpResponse, JsonResponse
-import requests
 from etfapp.api_func import *
-import json
-from plotly.io import to_html
 from etfapp.tableau import *
 
 

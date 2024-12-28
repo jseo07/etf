@@ -16,6 +16,7 @@ import dj_database_url
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
@@ -34,6 +35,7 @@ SECRET_KEY = 'django-insecure-15df_p4mzvd-)ub=uzjy95^#$c)u8slkmd&)&!bs1k$1#%7@1+
 DEBUG = False
 
 ALLOWED_HOSTS = ['https://jangwon-68c8d33bb755.herokuapp.com/']
+#'https://jangwon-68c8d33bb755.herokuapp.com/'
 
 # Application definition
 

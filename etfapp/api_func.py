@@ -1,4 +1,3 @@
-import plotly.express as px
 import pandas as pd
 import yfinance as yf
 from tableauhyperapi import HyperProcess, Connection, TableDefinition, SqlType, Telemetry, CreateMode, Inserter
