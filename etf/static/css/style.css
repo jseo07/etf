@@ -40,7 +40,7 @@ button:hover {
 }
 /* Center the search container */
 .search-container {
-    width: 500px; /* Width of the search input */
+    width: 100%; /* Width of the search input */
     z-index: 1000; /* Ensures it stays above other content */
     padding-bottom: 10px;
     transition-delay: 2s;
@@ -54,7 +54,7 @@ button:hover {
 }
 
 .results-container {
-    width: 518px; /* Same width as search input */
+    width: 100%; /* Same width as search input */
     max-height: 60vh; /* Optional: limit height */
     overflow-y: auto; /* Optional: scroll if too many results */
     border: 1px solid #ccc; /* Add border for clarity */
@@ -77,4 +77,17 @@ button:hover {
 
 .result-item:last-child {
     border-bottom: none; 
+}
+table {
+    width: 50%;
+    margin: 20px auto;
+    border-collapse: collapse;
+    text-align: left;
+}
+th, td {
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+}
+th {
+    background-color: #f4f4f4;
 }

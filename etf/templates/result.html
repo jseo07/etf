@@ -1,4 +1,36 @@
-{{ symbol }}
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Search Bar</title>
+    <!-- Load the CSS file using Django's static tag -->
 
-<script type='module' src='https://prod-ca-a.online.tableau.com/javascripts/api/tableau.embedding.3.latest.min.js'></script>
-<tableau-viz id='tableau-viz' src='https://prod-ca-a.online.tableau.com/t/jang079-d24d6284f0/views/tableau_plot/Dashboard1' width='1000' height='840' hide-tabs toolbar='bottom' ></tableau-viz>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">  <!-- Correctly reference the CSS file -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script type='module' src='https://prod-ca-a.online.tableau.com/javascripts/api/tableau.embedding.3.latest.min.js'></script>
+</head>
+<body>
+    <div class="page">
+        <h1>Stock Prices and Dividends Payments of {{ symbol }}</h1>
+        <tableau-viz id='tableau-viz' src='https://prod-ca-a.online.tableau.com/t/jang079-d24d6284f0/views/tableau_plot/Dashboard1' width='1000' height='840' hide-tabs toolbar='bottom' ></tableau-viz>
+        <h2 style="text-align: center;">Dividend Predictions</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Dividend Cycle</th>
+                    <th>Dividend Prediction</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in prediction %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td>{{ item }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </body>
+</html>

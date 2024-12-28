@@ -1,81 +1,125 @@
-import yfinance as yf
 import pandas as pd
-from tableauhyperapi import HyperProcess, Connection, TableDefinition, SqlType, Telemetry, CreateMode, Inserter
-import tableauserverclient as tsc
+import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.preprocessing import MinMaxScaler
+from sklearn.model_selection import train_test_split
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import LSTM, Dense, Input
+from tensorflow.keras.optimizers import Adam
+import yfinance as yf
+import warnings
 
-site_id = "jang079-d24d6284f0"
-username = "jang079@student.ubc.ca"
-password = "Kids7741@"
-server_url = "https://prod-ca-a.online.tableau.com" 
-data_source_name = "data"
-HYPER_FILE_PATH = "data.hyper"
+warnings.filterwarnings('ignore', category = UserWarning)
 
-def dataframe_to_hyper(df, table_name, hyper_name):
-    with HyperProcess(telemetry=Telemetry.SEND_USAGE_DATA_TO_TABLEAU) as hyper:
-        with Connection(endpoint=hyper.endpoint, database=hyper_name, create_mode=CreateMode.NONE) as connection:
+scaler = MinMaxScaler()
+sequence_length = 12
+num_predictions = 5
 
-            tables = connection.catalog.get_table_names(schema="public")
-            
-            # Drop each table
-            for table in tables:
-                drop_table_command = f"DROP TABLE IF EXISTS {table};"
-                connection.execute_command(drop_table_command)
+def request_data(symbol):
+    dat = yf.Ticker(symbol)
+    dat= dat.history(period="max", interval="1d")
+    dat.reset_index(inplace=True)
+    dat['Date'] = pd.to_datetime(dat['Date'])
+    return dat
 
+def filter_dividend(data):
+    filtered_df = data[data['Dividends'] > 0]
+    filtered_df = filtered_df[['Date', 'Dividends']]
+    filtered_df['Date'] = pd.to_datetime(filtered_df['Date'])
+    filtered_df['Date'] = filtered_df['Date'].dt.to_period('M').astype(str)
+    filtered_df.set_index('Date', inplace=True)
 
-            columns = []
-            for col_name in df.columns:
-                if df[col_name].dtype == '0':
-                    col_type = SqlType.text()
-                elif pd.api.types.is_datetime64_any_dtype(df[col_name]):
-                    col_type = SqlType.timestamp()
-                else:
-                    col_type = SqlType.double()
-                columns.append(TableDefinition.Column(name=col_name, type=col_type))
-            table_definition = TableDefinition(table_name = table_name, columns=columns)
-            connection.catalog.create_table(table_definition)
+    return filtered_df
 
-            with Inserter(connection, table_definition) as inserter:
-                inserter.add_rows(rows=df.values)
-                inserter.execute()
+def add_stock_prices(dividend_data, stock_data):
+    dividend_data = dividend_data.reset_index()
+    stock_data['Date'] = pd.to_datetime(stock_data['Date']).dt.tz_localize(None)
+    dividend_data['Date'] = pd.to_datetime(dividend_data['Date']).dt.tz_localize(None)
     
-    try:
-        tableau_auth = tsc.TableauAuth(username, password, site_id=site_id)
-        server = tsc.Server(server_url, use_server_version=True)
+    # Create a list to store results
+    average_prices = []
+    
+    # Loop through each dividend payment date
+    for div_date in dividend_data['Date']:
+        # Calculate the start and end of the 3-month period
+        start_date = (div_date - pd.DateOffset(months=1)).replace(day=1)
+        end_date = div_date - pd.Timedelta(days=1)  # Day before the dividend month
+    
+        # Filter stock data for the 3-month period
+        filtered_stock = stock_data[(stock_data['Date'] >= start_date) & (stock_data['Date'] <= end_date)]
+    
+        # Calculate the average close price
+        avg_close_price = filtered_stock['Close'].mean()
+        average_prices.append(avg_close_price)
+    
+    # Add the average prices as a new column to the dividend DataFrame
+    dividend_data['Avg_Close_Prev_1_Month'] = average_prices
+    return dividend_data
 
-        with server.auth.sign_in(tableau_auth):
-            all_datasources, pagination_item = server.datasources.get()
-            datasource = next(
-                (ds for ds in all_datasources if ds.name == data_source_name), None
-            )
+def prepare_train_test_data(train_data):
+    train_data[['Dividends', 'Avg_Close_Prev_1_Month']] = scaler.fit_transform(train_data[['Dividends', 'Avg_Close_Prev_1_Month']])
+    X, y = [], []
 
-            if datasource is None:
-                print(f"Data source '{data_source_name}' not found on the server.")
-                return
-            print(f"Found data source: {datasource.name} (ID: {datasource.id})")
+    for i in range(len(train_data) - 12):
+        seq_x = train_data.iloc[i:i + 12][['Dividends', 'Avg_Close_Prev_1_Month']].values
+        seq_y = train_data.iloc[i + 12]["Dividends"]
+        
+        X.append(seq_x)
+        y.append(seq_y)
 
-            new_ds_item = tsc.DatasourceItem(
-                project_id=datasource.project_id,
-                name=data_source_name
-            )
+    X = np.array(X)
+    y = np.array(y)
 
-            server.datasources.publish(
-                new_ds_item,
-                HYPER_FILE_PATH,
-                tsc.Server.PublishMode.Overwrite
-            )
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = 0.2, shuffle = False)
 
-            print(f"Data source '{data_source_name}' successfully replaced.")
-    except Exception as e:
-        print(f"An error occurred: {e}")
+    return X_train, X_test, y_train, y_test
 
+def configure_model(X_train, y_train):
+    model = Sequential()
+    model.add(Input(shape=(X_train.shape[1], X_train.shape[2])))
 
+    model.add(LSTM(units=50, activation='relu', return_sequences = True))
+    model.add(LSTM(units=50, activation='relu'))
+    model.add(Dense(units = 1))
+    model.compile(optimizer = Adam(learning_rate = 0.001), loss='mean_squared_error')
+    model.fit(X_train, y_train, epochs = 50, batch_size = 32)
+    return model
+    
 
-symbol = "MSFT"
-dat = yf.Ticker(symbol)
-dat= dat.history(start='2018-09-24', end='2024-12-12')
-dat.reset_index(inplace=True)
-dat['Date'] = pd.to_datetime(dat['Date'])
+def prepare_train_data(symbol):
+    dividends = request_data(symbol)
+    dividends = filter_dividend(dividends)
+    stock = request_data(symbol)
+    train_data = add_stock_prices(dividends, stock)
+    return train_data
 
+def predict_dividends(test_data, sequence_length, num_predictions, model):
+    last_sequence = test_data.iloc[-sequence_length:][['Dividends', 'Avg_Close_Prev_1_Month']].values
+    last_sequence_scaled = scaler.transform(last_sequence)
+    current_input = last_sequence_scaled.reshape(1, sequence_length, 2)
+    
+    future_dividends = []
+    
+    for _ in range(num_predictions):
+        # Predict the next dividend
+        next_dividend_scaled = model.predict(current_input)  # Output: (1, 1)
+        next_dividend = scaler.inverse_transform([[next_dividend_scaled[0, 0], 0]])[0, 0]  # Rescale to original scale
+    
+        # Append the prediction to the results
+        future_dividends.append(next_dividend)
+    
+        # Update the input sequence
+        # Remove the oldest timestep and add the predicted dividend with the most recent avg_close
+        next_avg_close = test_data.iloc[-1]['Avg_Close_Prev_1_Month']  # Use the most recent avg_close from train_data
+        next_timestep = [next_dividend_scaled[0, 0], scaler.transform([[0, next_avg_close]])[0, 1]]  # Scale avg_close
+    
+        # Append the new timestep and remove the oldest
+        current_input = np.append(current_input[:, 1:, :], [[next_timestep]], axis=1)  # Update input
+    
+    # Print predictions
+    print("Predicted Future Dividends:")
+    print(future_dividends)
+    return future_dividends
 
-dataframe_to_hyper(dat, 'table', "data.hyper")
+symbol = "JEPI"
 

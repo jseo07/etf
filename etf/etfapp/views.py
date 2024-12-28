@@ -1,9 +1,10 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.http import HttpResponse, JsonResponse
 import requests
 from etfapp.api_func import *
 import json
 from plotly.io import to_html
+from etfapp.tableau import *
 
 
 # Create your views here.
@@ -14,11 +15,14 @@ def index(request):
 def result(request, symbol):
     symbol = extract_symbol(symbol)
 
-    
     data = request_data(symbol)
     dataframe_to_hyper(data, 'table', "data.hyper")
 
-    context = {'symbol':symbol }
+    future = predict(symbol)
+    future = [float(value) for value in future]
+
+    context = {'symbol':symbol,
+               'prediction': future }
     return render(request, 'result.html', context)
 
 def live_search(request):
@@ -47,3 +51,12 @@ def extract_symbol(str):
     str = str[:-4]
     return str
     
+def predict(symbol):
+    train_data = prepare_train_data(symbol)
+    X_train, X_test, y_train, y_test = prepare_train_test_data(train_data)
+    model = configure_model(X_train, y_train)
+
+    to_be_predicted = prepare_train_data(symbol)
+    future_dividends = predict_dividends(to_be_predicted, sequence_length, num_predictions, model)
+
+    return future_dividends
