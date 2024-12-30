@@ -34,7 +34,7 @@ SECRET_KEY = 'django-insecure-15df_p4mzvd-)ub=uzjy95^#$c)u8slkmd&)&!bs1k$1#%7@1+
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['000.00.00.00', 'predict-dividend-a5c8htchfsfxetg5.canadacentral-01.azurewebsites.net', 'predict-dividend.seonjangwon.xyz']
+ALLOWED_HOSTS = ['000.00.00.00', 'predict-dividend-a5c8htchfsfxetg5.canadacentral-01.azurewebsites.net', 'predict-dividend.seojangwon.xyz']
 #'https://jangwon-68c8d33bb755.herokuapp.com/'
 
 # Application definition
